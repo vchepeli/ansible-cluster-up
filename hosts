@@ -1,5 +1,5 @@
 [mobile-core]
 
 [centos]
-#ec2-35-158-140-158.eu-central-1.compute.amazonaws.com ansible_ssh_private_key_file=/Users/vchepeli/.ssh/ec2.centos ansible_user=centos
-192.168.64.6 ansible_ssh_private_key_file=/Users/vchepeli/.ssh/id_rsa.feedhenry ansible_user=centos
+ec2-35-159-26-112.eu-central-1.compute.amazonaws.com ansible_ssh_private_key_file=/Users/vchepeli/.ssh/ec2.centos ansible_user=centos
+#192.168.64.6 ansible_ssh_private_key_file=/Users/vchepeli/.ssh/id_rsa.feedhenry ansible_user=centos

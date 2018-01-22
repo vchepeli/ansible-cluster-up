@@ -308,6 +308,7 @@
     changed_when: false
     ignore_errors: '{{ ansible_check_mode }}'
     register: user_name
+    tags: [oc, user]
 
   # PREREQUISITE BLOCK
   - name: OC | Check  if OC@{{ oc_version }} is already installed

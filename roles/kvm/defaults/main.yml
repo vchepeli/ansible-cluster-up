@@ -1,0 +1,4 @@
+docker_machine_kvm_platform: centos7
+docker_machine_kvm_version: 0.10.0
+
+docker_machine_kvm_install_opt_dir: /opt/docker-machine-kvm

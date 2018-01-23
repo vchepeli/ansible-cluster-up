@@ -21,15 +21,15 @@
       state: directory
       prefix: oc
     changed_when: false
-    register: oc_dir_tmp
+    register: oc_dir_tmp_created
     tags: [oc, install]
 
   - name: Download OC bundle TAR.GZ
     get_url:
-      url: '{{ oc_bundle_download_url }}'
-      dest: '{{ oc_dir_tmp.path }}/'
-    when: not oc_dir_tmp|skipped
-    register: oc_download
+      url: '{{ oc_bundle_downloaded_url }}'
+      dest: '{{ oc_dir_tmp_created.path }}/'
+    when: not oc_dir_tmp_created|skipped
+    register: oc_bundle_downloaded
     tags: [oc, install]
 
   - name: Create OC installation directory
@@ -37,20 +37,20 @@
       path: '{{ oc_install_dir }}'
       state: directory
       owner: '{{ user_name.stdout }}'
-    when: not oc_download|skipped
+    when: not oc_bundle_downloaded|skipped
     become: yes
     tags: [oc, install]
 
   - name: Extract OC bundle TAR.GZ
     unarchive:
-      src: '{{ oc_dir_tmp.path }}/{{ oc_bundle_archive }}'
+      src: '{{ oc_dir_tmp_created.path }}/{{ oc_bundle_archive }}'
       dest: '{{ oc_install_dir }}'
       owner: '{{ user_name.stdout }}'
       creates: '{{ oc_install_dir }}/oc'
       copy: no
       extra_opts: --strip-components=1
-    when: not oc_download|skipped
-    register: oc_bundle_extract
+    when: not oc_bundle_downloaded|skipped
+    register: oc_bundle_extracted
     become: yes
     tags: [oc, install]
 
@@ -60,8 +60,8 @@
       dest: '{{ oc_default_dir }}'
       state: link
       force: yes
-    when: not oc_bundle_extract|skipped
-    register: oc_default_opt_dir
+    when: not oc_bundle_extracted|skipped
+    register: oc_default_dir_linked
     tags: [oc, install]
 
   - name: Sym link /usr/local/bin/oc to OC default
@@ -70,14 +70,14 @@
       dest: '/usr/local/bin/oc'
       state: link
       force: yes
-    when: not oc_default_opt_dir|skipped
+    when: not oc_default_dir_linked|skipped
     become: yes
     tags: [oc, install]
 
   always:
     - name: Cleanup TMP directory
       file:
-        name: '{{ oc_dir_tmp.path }}'
+        name: '{{ oc_dir_tmp_created.path }}'
         state: absent
       changed_when: false
       ignore_errors: no

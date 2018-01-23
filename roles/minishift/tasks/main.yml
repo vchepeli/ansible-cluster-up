@@ -1,0 +1,110 @@
+- name: Get the current users name
+  shell: id -u -n
+  changed_when: false
+  ignore_errors: no
+  register: user_name
+  tags: [minishift, prerequisite]
+
+- name: Check if minishift@{{ minishift_version }} is already installed
+  stat:
+    path: '{{ minishift_install_dir }}/minishift'
+  ignore_errors: yes
+  changed_when: false
+  register: minishift_bin_installed
+  tags: [minishift, prerequisite]
+
+- when: not minishift_bin_installed.stat.exists
+  block:
+  - name: Create TMP directory
+    tempfile:
+      state: directory
+      prefix: minishift
+    changed_when: false
+    register: minishift_dir_tmp_created
+    tags: [minishift, install]
+
+  - name: Download Minishift bundle TAR.GZ
+    get_url:
+      url: '{{ minishift_bundle_download_url }}'
+      dest: '{{ minishift_dir_tmp_created.path }}/'
+    when: not minishift_dir_tmp_created|skipped
+    register: minishift_bundle_downloaded
+    tags: [minishift, install]
+
+  - name: Create Minishift installation directory
+    file:
+      path: '{{ minishift_install_dir }}'
+      state: directory
+      owner: '{{ user_name.stdout }}'
+    when: not minishift_bundle_downloaded|skipped
+    become: yes
+    tags: [minishift, install]
+
+  - name: Extract Minishift bundle TGZ
+    unarchive:
+      src: '{{ minishift_dir_tmp_created.path }}/{{ minishift_bundle_archive }}'
+      dest: '{{ minishift_install_dir }}'
+      owner: '{{ user_name.stdout }}'
+      copy: no
+      extra_opts: --strip-components=1
+    when: not minishift_bundle_downloaded|skipped
+    register: minishift_bundle_extracted
+    become: yes
+    tags: [minishift, install]
+
+  - name: Sym link {{ minishift_install_dir }} to Minishift default
+    file:
+      src: '{{ minishift_install_dir }}'
+      dest: '{{ minishift_default_dir }}'
+      state: link
+      force: yes
+    when: not minishift_bundle_extracted|skipped
+    register: minishift_default_dir_linked
+    tags: [minishift, install]
+
+  - name: Sym link /usr/local/bin/minishift to Minishift default
+    file:
+      src: '{{ minishift_default_dir }}/minishift'
+      dest: '/usr/local/bin/minishift'
+      state: link
+      force: yes
+    when: not minishift_default_dir_linked|skipped
+    become: yes
+    tags: [minishift, install]
+
+  always:
+    - name: Cleanup TMP directory
+      file:
+        name: '{{ minishift_dir_tmp_created.path }}'
+        state: absent
+      changed_when: false
+      ignore_errors: no
+      tags: [minishift, install]
+
+- name: Checking installed version of Minishift client
+  shell: /usr/bin/test "$(minishift version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ minishift_version }}+{{ minishift_sha }}
+  ignore_errors: yes
+  register: minishift_wanted_version_installed
+  failed_when: minishift_wanted_version_installed.rc > 0
+  tags: [minishift, postcheck]
+
+- name: Configure CPU and Memory
+  shell: minishift config set {{ item.name }} {{ item.value }}
+  changed_when: false
+  ignore_errors: no
+  when: minishift_wanted_version_installed.rc == 0
+  with_items:
+    - {name: cpus, value: 4}
+    - {name: memory, value: 4096}
+  become: yes
+  tags: [minishift, config]
+
+### TODO add check for config json file change
+### http://www.myteneo.net/blog/-/blogs/listing-iterating-and-loading-json-in-ansible-playbooks/
+#  - name: Minishift | Configuration was changed
+#    set_fact:
+#      minishift_config: "{{ lookup('file', '/home/centos/.minishift/config/config.json')|from_json }}"
+#
+#  - name: Minishift | Iterate minishift configuration
+#    debug: vars=minishift_config
+#    tags: [minishift, config]

@@ -1,0 +1,86 @@
+---
+- name: Get the current users name
+  shell: id -u -n
+  changed_when: false
+  ignore_errors: no
+  register: user_name
+  tags: [kvm, prerequisite]
+
+- name: Install required packages
+  yum:
+    name: '{{ item }}'
+    state: latest
+  with_items:
+    - libvirt
+    - qemu-kvm
+  become: yes
+  tags: [kvm, prerequisite]
+
+- name: Add {{ user_name.stdout }} to libvirt, kvm groups
+  user:
+    name: '{{ user_name.stdout }}'
+    group: '{{ item }}'
+    append: yes
+  with_items:
+    - libvirt
+    - kvm
+  become: yes
+  tags: [kvm, install]
+
+- name: Enable @virtualization services
+  systemd:
+    name: '{{ item }}'
+    state: started
+    enabled: yes
+  become: yes
+  with_items:
+    - virtlogd
+    - libvirtd
+  tags: [kvm, services]
+
+- name: Check  if docker-machine-driver-kvm@{{ docker_machine_kvm_version }} is already installed
+  stat:
+    path: '{{ docker_machine_kvm_install_dir }}/docker-machine-driver-kvm'
+  ignore_errors: yes
+  changed_when: false
+  register: docker_machine_kvm_bin_installed
+  tags: [kvm, prerequisite]
+
+- when: not docker_machine_kvm_bin_installed.stat.exists
+  block:
+  - name: Create docker-machine-driver-kvm installation directory
+    file:
+      path: '{{ docker_machine_kvm_install_dir }}'
+      state: directory
+      owner: '{{ user_name.stdout }}'
+    become: yes
+    tags: [kvm, install]
+
+  - name: Install docker-machine-driver-kvm@{{ docker_machine_kvm_version }}
+    get_url:
+      url: '{{ docker_machine_kvm_bundle_download_url }}'
+      dest: '{{ docker_machine_kvm_install_dir }}/docker-machine-driver-kvm'
+      mode: +x
+    register: docker_machine_kvm_bundle_downloaded
+    become: yes
+    tags: [kvm, driver]
+
+  - name: Sym link {{ docker_machine_kvm_install_dir }} to docker-machine-driver-kvm default
+    file:
+      src: '{{ docker_machine_kvm_install_dir }}'
+      dest: '{{ docker_machine_kvm_default_dir }}'
+      state: link
+      force: yes
+    when: not docker_machine_kvm_bundle_downloaded|skipped
+    register: docker_machine_kvm_default_dir_linked
+    tags: [kvm, install]
+
+  - name: Sym link /usr/local/bin/docker-machine-driver-kvm to docker-machine-driver-kvm default
+    file:
+      src: '{{ docker_machine_kvm_default_dir }}/docker-machine-driver-kvm'
+      dest: '/usr/local/bin/docker-machine-driver-kvm'
+      state: link
+      force: yes
+    when: not docker_machine_kvm_default_dir_linked|skipped
+    become: yes
+    tags: [kvm, install]

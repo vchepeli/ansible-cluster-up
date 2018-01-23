@@ -1,0 +1,8 @@
+docker_machine_kvm_download_mirror: 'https://github.com/dhiltgen/docker-machine-kvm/releases/download'
+
+docker_machine_kvm_bundle_name: 'docker-machine-driver-kvm-{{ docker_machine_kvm_platform }}'
+docker_machine_kvm_bundle_archive: '{{ docker_machine_kvm_bundle_name }}{{ docker_machine_kvm_download_format|default("") }}'
+docker_machine_kvm_bundle_download_url: '{{ docker_machine_kvm_download_mirror }}/v{{ docker_machine_kvm_version }}/{{ docker_machine_kvm_bundle_archive }}'
+
+docker_machine_kvm_install_dir: '{{ docker_machine_kvm_install_opt_dir }}/v{{ docker_machine_kvm_version }}'
+docker_machine_kvm_default_dir: '{{ docker_machine_kvm_install_opt_dir }}/default'

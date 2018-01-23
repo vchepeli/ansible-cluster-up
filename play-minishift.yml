@@ -1,368 +1,71 @@
 ---
-########################################################################################################################
-#- hosts: localhost
-#  vars:
-#    ec2_region: eu-central-1
-#    ec2_instance_type: t2.large
-#    ec2_instance_count: 1
-#    ec2_enabled: yes
-#    ec2_key_name: ec2-mcp-core
-#  tasks:
-#
-#  - block:
-#    - name: EC2 | Install Boto library
-#      pip:
-#        name: boto3
-#        state: latest
-#        extra_args: --user --upgrade
-#      when: ec2_enabled
-#      tags: [ec2, boto]
-#
-#    - name: EC2 | Create keypair
-#      ec2_key:
-#        name: '{{ ec2_key_name }}'
-#        key_material: '{{ item }}'
-#        region: '{{ ec2_region }}'
-#      with_file: '{{ ansible_env.HOME }}/.ssh/ec2.centos.pub'
-#      when: ec2_enabled
-#      tags: [ec2, keypair]
-#
-#    - name: EC2 | Configure security groups for mobile-core
-#      ec2_group:
-#        name: '{{ item.name }}'
-#        description: '{{ item.description}}'
-#        region: '{{ ec2_region }}'
-#        rules:
-#          - proto: '{{ item.proto }}'
-#            from_port: '{{ item.port }}'
-#            to_port: '{{ item.port }}'
-#            cidr_ip: 0.0.0.0/0
-#      with_items:
-#        - {name: mcore-ssh,   description: Allow SSH access,   proto: tcp, port: 22}
-#        - {name: mcore-https, description: Allow HTTPS access, proto: tcp, port: 8443}
-#      tags: [ec2, security]
-#
-#    - name: EC2 | Outbound security group
-#      ec2_group:
-#        name: outbound
-#        description: allow outbound connections to the internet
-#        region: "{{ ec2_region }}"
-#        rules_egress:
-#          - proto: all
-#            cidr_ip: 0.0.0.0/0
-#      tags: [ec2, security]
-#
-#    - name: EC2 | Get the Centos EBS SSD AMI
-#      ec2_ami_find:
-#        architecture: x86_64
-#        name: 'CentOS Linux 7*EBS*'
-#        region: '{{ ec2_region }}'
-#        sort: creationDate
-#        sort_order: descending
-#        sort_end: 1
-#        no_result_action: fail
-#      register: centos_ami_find
-#      tags: [ec2, find-vmi]
-#
-#    - name: EC2 | Start the instances
-#      ec2:
-#        region: '{{ ec2_region }}'
-#        image: '{{ centos_ami_find.results[0].ami_id }}'
-#        instance_type: '{{ ec2_instance_type }}'
-#        key_name: '{{ ec2_key_name }}'
-#        group: [ssh, https, outbound]
-#        instance_tags: {Name: mcore-1, type: mobile-core, env: testing}
-#        exact_count: '{{ ec2_instance_count }}'
-#        count_tag: {type: mobile-core}
-#        wait: yes
-#      register: ec2
-#      tags: [ec2, start-vms]
-#
-#    - name: EC2 | Add instances to group
-#      add_host:
-#        hostname: '{{ item.public_dns_name }}'
-#        groups: mcore
-#      with_items: '{{ ec2.tagged_instances }}'
-#      when: item.public_dns_name is defined
-#      tags: [ec2, group-vms]
-#
-#    - name: EC2 | Wait for SSH server to be running
-#      wait_for:
-#        host: '{{ item.public_dns_name }}'
-#        port: 22
-#        search_regex: OpenSSH
-#      with_items: '{{ ec2.tagged_instances }}'
-#      when: item.public_dns_name is defined
-#      tags: [ec2, wait-vms]
-#
-#######################################################################################################################
 - hosts: centos
-  vars:
-    ansible_ignore_errors: no
-    docker_machine_kvm_ver: 0.10.0
-    minishift_ver: 1.11.0
-    minishift_sha: 4459917
-  tasks:
-########################################################################################################################
-########################################################### SYSTEM
-########################################################################################################################
-  - block:
-    - name: System | Upgrade all packages
-      yum:
-        name: '*'
-        state: latest
-      become: yes
-      tags: [system, install]
+  roles:
+    - minishift
 
-    - name: System | Install required packages
-      yum:
-        name: '{{ item }}'
-        state: latest
-      with_items:
-        - curl
-        - epel-release
-        - git
-        - libselinux-python
-        - mc
-        - ntp
-        - net-tools
-        - unzip
-        - vim
-        - wget
-        - zip
-      become: yes
-      tags: [system, packages]
-########################################################################################################################
-########################################################### KVM
-########################################################################################################################
-  - name: KVM | Get the current users name
-    shell: id -u -n
-    changed_when: false
-    ignore_errors: '{{ ansible_ignore_errors }}'
-    register: user_name
-    tags: [kvm, user]
-
-  - name: KVM | Install required packages
-    yum:
-      name: '{{ item }}'
-      state: latest
-    with_items:
-      - libvirt
-      - qemu-kvm
-    become: yes
-    tags: [kvm, packages]
-
-  - name: KVM | Add {{ user_name.stdout }} to libvirt, kvm groups
-    user:
-      name: '{{ user_name.stdout }}'
-      group: '{{ item }}'
-      append: yes
-    with_items:
-      - libvirt
-      - kvm
-    become: yes
-    tags: [kvm, install]
-
-  - name: KVM | Enable @virtualization services
-    systemd:
-      name: '{{ item }}'
-      state: started
-      enabled: yes
-    become: yes
-    with_items:
-      - virtlogd
-      - libvirtd
-    tags: [kvm, services]
-
-  - name: KVM | Install latest docker-machine-driver-kvm version
-    get_url:
-      url: https://github.com/dhiltgen/docker-machine-kvm/releases/download/v{{ docker_machine_kvm_ver }}/docker-machine-driver-kvm-centos7
-      dest: /usr/local/bin/docker-machine-driver-kvm
-      mode: +x
-    become: yes
-    tags: [kvm, driver]
 ########################################################################################################################
 ########################################################### VirtualBox
 ########################################################################################################################
-  - name: System | Get the current users name
-    shell: id -u -n
-    changed_when: false
-    ignore_errors: '{{ ansible_ignore_errors }}'
-    register: user_name
-    tags: [virtualbox, user]
-
-  - name: VirtualBox | Add repository
-    yum_repository:
-      name: VirtualBox
-      description: VirtualBox YUM repo
-      baseurl: http://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch/
-      gpgkey: https://www.virtualbox.org/download/oracle_vbox.asc
-      gpgcheck: yes
-      enabled: yes
-    become: yes
-    tags: [virtualbox, packages]
-
-  - name: VirtualBox | Install required packages
-    yum:
-      name: '{{ item }}'
-      state: latest
-    with_items:
-      - binutils
-      - gcc
-      - make
-      - patch
-      - libgomp
-      - glibc-headers
-      - glibc-devel
-      - kernel-headers
-      - kernel-devel
-      - dkms
-    become: yes
-    tags: [virtualbox, dependencies]
-
-  - name: VirtualBox | Install VirtualBox@5.2
-    yum:
-      name: '{{ item }}'
-      state: latest
-    with_items:
-      - VirtualBox-5.2
-    become: yes
-    tags: [virtualbox, install]
-
-  - name: VirtualBox | Rebuild kernel modules
-    shell: /usr/lib/virtualbox/vboxdrv.sh setup
-    ignore_errors: no
-    register: virtualbox_kernel_modules_rebuilded
-    failed_when: virtualbox_kernel_modules_rebuilded.rc > 0
-    become: yes
-    tags: [virtualbox, install]
-
-  - name: VirtualBox | Add {{ user_name.stdout }} to vboxusers group
-    user:
-      name: '{{ user_name.stdout }}'
-      group: vboxusers
-      append: yes
-    become: yes
-    tags: [VirtualBox, install]
-########################################################################################################################
-#################################################### MINISHIFT
-########################################################################################################################
-  - name: Minishift | Get the current users name
-    shell: id -u -n
-    changed_when: false
-    ignore_errors: '{{ ansible_ignore_errors }}'
-    register: user_name
-    tags: [minishift, user]
-
-  # PREREQUISITE BLOCK
-  - name: Minishift | Check if minishift@{{ minishift_ver }} is already installed
-    stat:
-      path: $MINISHIFT_DIR/v{{ minishift_ver }}/minishift
-    ignore_errors: yes
-    changed_when: false
-    register: minishift_bin_installed
-    environment:
-      MINISHIFT_DIR: "/opt/openshift/minishift"
-    tags: [minishift, install]
-
-  ## Minishift block
-  - when: not minishift_bin_installed.stat.exists
-    block:
-    - name: Minishift | Create TMP directory
-      tempfile:
-        state: directory
-        prefix: minishift
-      changed_when: false
-      register: minishift_dir_tmp
-      tags: [minishift, install]
-
-    - name: Minishift | Download Minishift bundle TAR.GZ
-      get_url:
-        url: 'https://github.com/minishift/minishift/releases/download/v{{ minishift_ver }}/minishift-{{ minishift_ver }}-linux-amd64.tgz'
-        dest: '{{ minishift_dir_tmp.path }}/'
-      when: not minishift_dir_tmp|skipped
-      register: minishift_download
-      tags: [minishift, install]
-
-    - name: Minishift | Create Minishift installation directory
-      file:
-        path: '/opt/openshift/minishift/v{{ minishift_ver }}'
-        state: directory
-        owner: '{{ user_name.stdout }}'
-      when: not minishift_download|skipped
-      become: yes
-      tags: [minishift, install]
-
-    - name: Minishift | Extract Minishift bundle TAR.GZ
-      unarchive:
-        src: '{{ minishift_dir_tmp.path }}/minishift-{{ minishift_ver }}-linux-amd64.tgz'
-        dest: '/opt/openshift/minishift/v{{ minishift_ver }}'
-        owner: '{{ user_name.stdout }}'
-        copy: no
-        extra_opts: --strip-components=1
-      when: not minishift_download|skipped
-      register: minishift_bundle_extract
-      become: yes
-      tags: [minishift, install]
-
-    - name: Minishift | Sym link {{ minishift_installation_dir }} to Minishift latest
-      file:
-        src: '/opt/openshift/minishift/v{{ minishift_ver }}'
-        dest: '/opt/openshift/minishift/latest'
-        state: link
-        force: yes
-      when: not minishift_bundle_extract|skipped
-      register: minishift_latest_opt_dir
-      tags: [minishift, install]
-
-    - name: Minishift | Sym link /usr/local/bin/minishift to Minishift latest
-      file:
-        src: '/opt/openshift/minishift/latest/minishift'
-        dest: '/usr/local/bin/minishift'
-        state: link
-        force: yes
-      when: not minishift_latest_opt_dir|skipped
-      become: yes
-      tags: [minishift, install]
-
-    always:
-      - name: Minishift | Cleanup TMP directory
-        file:
-          name: '{{ minishift_dir_tmp.path }}'
-          state: absent
-        changed_when: false
-        ignore_errors: '{{ ansible_ignore_errors }}'
-        tags: [minishift, install]
-
-  # POSTCHECK for Minishift client version installed
-  - name: Minishift | Checking installed version of Minishift client
-    shell: /usr/bin/test "$(minishift version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ minishift_ver }}+{{ minishift_sha }}
-    ignore_errors: yes
-    register: minishift_wanted_version_installed
-    failed_when: minishift_wanted_version_installed.rc > 0
-    tags: [minishift, install]
-
-
-  - name: Minishift | Configure CPU and Memory
-    shell: /usr/local/bin/minishift config set {{ item.name }} {{ item.value }}
-    changed_when: false
-    ignore_errors: '{{ ansible_ignore_errors }}'
-    when: minishift_wanted_version_installed.rc == 0
-    with_items:
-      - {name: cpus, value: 4}
-      - {name: memory, value: 4096}
-    become: yes
-    tags: [minishift, config]
-
-### TODO add check for config json file change
-### http://www.myteneo.net/blog/-/blogs/listing-iterating-and-loading-json-in-ansible-playbooks/
-#  - name: Minishift | Configuration was changed
-#    set_fact:
-#      minishift_config: "{{ lookup('file', '/home/centos/.minishift/config/config.json')|from_json }}"
+#  - name: System | Get the current users name
+#    shell: id -u -n
+#    changed_when: false
+#    ignore_errors: '{{ ansible_ignore_errors }}'
+#    register: user_name
+#    tags: [virtualbox, user]
 #
-#  - name: Minishift | Iterate minishift configuration
-#    debug: vars=minishift_config
-
+#  - name: VirtualBox | Add repository
+#    yum_repository:
+#      name: VirtualBox
+#      description: VirtualBox YUM repo
+#      baseurl: http://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch/
+#      gpgkey: https://www.virtualbox.org/download/oracle_vbox.asc
+#      gpgcheck: yes
+#      enabled: yes
+#    become: yes
+#    tags: [virtualbox, packages]
+#
+#  - name: VirtualBox | Install required packages
+#    yum:
+#      name: '{{ item }}'
+#      state: latest
+#    with_items:
+#      - binutils
+#      - gcc
+#      - make
+#      - patch
+#      - libgomp
+#      - glibc-headers
+#      - glibc-devel
+#      - kernel-headers
+#      - kernel-devel
+#      - dkms
+#    become: yes
+#    tags: [virtualbox, dependencies]
+#
+#  - name: VirtualBox | Install VirtualBox@5.2
+#    yum:
+#      name: '{{ item }}'
+#      state: latest
+#    with_items:
+#      - VirtualBox-5.2
+#    become: yes
+#    tags: [virtualbox, install]
+#
+#  - name: VirtualBox | Rebuild kernel modules
+#    shell: /usr/lib/virtualbox/vboxdrv.sh setup
+#    ignore_errors: no
+#    register: virtualbox_kernel_modules_rebuilded
+#    failed_when: virtualbox_kernel_modules_rebuilded.rc > 0
+#    become: yes
+#    tags: [virtualbox, install]
+#
+#  - name: VirtualBox | Add {{ user_name.stdout }} to vboxusers group
+#    user:
+#      name: '{{ user_name.stdout }}'
+#      group: vboxusers
+#      append: yes
+#    become: yes
+#    tags: [VirtualBox, install]
 
 
 

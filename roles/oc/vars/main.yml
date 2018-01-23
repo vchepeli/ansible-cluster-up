@@ -2,7 +2,7 @@
 oc_download_mirror: 'https://github.com/openshift/origin/releases/download'
 
 oc_bundle_name: 'openshift-origin-client-tools-v{{ oc_version }}-{{ oc_sha }}-{{ oc_platform }}'
-oc_bundle_archive: '{{ oc_bundle_name }}.{{ oc_download_format|default("tar.gz") }}'
+oc_bundle_archive: '{{ oc_bundle_name }}{{ oc_download_format|default(".tar.gz") }}'
 oc_bundle_download_url: '{{ oc_download_mirror }}/v{{ oc_version }}/{{ oc_bundle_archive }}'
 
 oc_install_dir: '{{ oc_install_opt_dir }}/v{{ oc_version }}'

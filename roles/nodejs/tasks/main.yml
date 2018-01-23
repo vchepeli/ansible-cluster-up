@@ -1,5 +1,4 @@
 ---
-# PREREQUISITE BLOCK
 - name: Check if NodeJs@{{ nodejs_version }} is installed
   stat:
     path: '{{ nodejs_install_dir }}/bin/node'
@@ -28,9 +27,8 @@
     when: not nvm_installed|skipped
     tags: [nodejs, install]
 
-# POSTCHECK BLOCK
 - name: Check installed version
   shell: /usr/bin/test "$(node -v 2> /dev/null)" = v{{ nodejs_version }}
   register: nodejs_wanted_version_installed
   failed_when: nodejs_wanted_version_installed.rc > 0
-  tags: [nodejs, check]
+  tags: [nodejs, postcheck]

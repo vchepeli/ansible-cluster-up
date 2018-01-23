@@ -1,5 +1,5 @@
 ---
-firewalld_dockerc_zone_ports:
+firewalld_dockerc_ports:
   - '8443/tcp'
   - '53/udp'
   - '8053/udp'

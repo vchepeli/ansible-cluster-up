@@ -4,17 +4,16 @@
   changed_when: false
   ignore_errors: no
   register: user_name
-  tags: [oc, user]
+  tags: [oc, prerequisite]
 
-# PREREQUISITE BLOCK
 - name: Check  if OC@{{ oc_version }} is already installed
   stat:
     path: ${{ oc_install_dir }}/oc
   ignore_errors: yes
   changed_when: false
   register: oc_bin_installed
+  tags: [oc, prerequisite]
 
-## OC block
 - when: not oc_bin_installed.stat.exists
   block:
   - name: Create temporary directory
@@ -47,6 +46,7 @@
       src: '{{ oc_dir_tmp.path }}/{{ oc_bundle_archive }}'
       dest: '{{ oc_install_dir }}'
       owner: '{{ user_name.stdout }}'
+      creates: '{{ oc_install_dir }}/oc'
       copy: no
       extra_opts: --strip-components=1
     when: not oc_download|skipped
@@ -83,10 +83,9 @@
       ignore_errors: no
       tags: [oc, install]
 
-# POSTCHECK for OC client version installed
 - name: Checking installed version of OC client
   shell: /usr/bin/test "$(oc version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ oc_version }}+{{ oc_sha }}
   ignore_errors: yes
   register: oc_wanted_version_installed
   failed_when: oc_wanted_version_installed.rc > 0
-  tags: [oc, check]
+  tags: [oc, postcheck]

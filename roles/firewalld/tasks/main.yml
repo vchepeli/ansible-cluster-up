@@ -46,10 +46,11 @@
       source: '{{ docker_bridge_ip_addr }}'
       state: enabled
       port: '{{ item }}'
-    with_items: '{{ firewalld_dockerc_zone_ports }}'
+    with_items: '{{ firewalld_dockerc_ports }}'
     become: yes
     tags: [firewalld, config]
   always:
     - debug: msg="trigger firewalld reload"
       notify: firewalld reload
       changed_when: true
+      tags: [firewalld, handler]

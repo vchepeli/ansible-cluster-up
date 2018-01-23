@@ -20,4 +20,4 @@
   changed_when: false
   register: pip_wanted_version_installed
   failed_when: pip_wanted_version_installed.rc > 0
-  tags: [pip, check]
+  tags: [pip, postcheck]

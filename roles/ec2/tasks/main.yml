@@ -1,7 +1,6 @@
 ---
 - when: ec2_enabled
   block:
-
   - name: Install Boto library
     pip:
       name: boto3

@@ -7,11 +7,6 @@
     - ec2
 
 - hosts: centos
-  vars:
-    system_nameservers:
-      - 8.8.8.8
-      - 8.8.4.4
-#      - 192.168.64.1
   roles:
     - mcore
 

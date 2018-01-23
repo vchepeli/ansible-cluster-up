@@ -4,9 +4,12 @@
   changed_when: false
   ignore_errors: no
   register: user_name
+  tags: [docker, prerequisite]
 
 #TODO add check if right version of docker is installed
+#TODO alternative installation of docker https://www.vultr.com/docs/installing-docker-ce-on-centos-7
 - block:
+    # This should install edge docker version, current 18.01
   - name: Install latest docker version
     shell: curl -fsSL https://get.docker.com/ | sh
     changed_when: false
@@ -52,14 +55,13 @@
       changed_when: true
       tags: [docker, install]
 
-# POSTCHECK docker block
 - name: Check bridge network
   command: docker network inspect -f '{% raw %}{{range .IPAM.Config }}{{ .Subnet }}{{end}}{% endraw %}' bridge
   changed_when: false
   ignore_errors: no
   register: docker_bridge
   become: yes
-  tags: [docker, check]
+  tags: [docker, postcheck]
 
 - debug: var=docker_bridge
-  tags: [docker, check]
+  tags: [docker, postcheck]

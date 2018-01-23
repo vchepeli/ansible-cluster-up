@@ -1,0 +1,2 @@
+---
+docker_sysconfig_options: OPTIONS='--selinux-enabled --insecure-registry {{ docker_bridge_ip_addr }}'

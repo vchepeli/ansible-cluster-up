@@ -361,7 +361,7 @@
 #      minishift_config: "{{ lookup('file', '/home/centos/.minishift/config/config.json')|from_json }}"
 #
 #  - name: Minishift | Iterate minishift configuration
-#    debug: var=minishift_config
+#    debug: vars=minishift_config
 
 
 

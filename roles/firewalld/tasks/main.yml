@@ -1,0 +1,55 @@
+---
+- name: Check if Firewalld is installed
+  yum:
+    list: firewalld
+  register: firewalld_is_installed
+  tags: [firewalld, prerequisite]
+
+# TODO can try do it much better
+#- set_fact:
+#    firewalld_yumstate: '{{firewalld_is_installed|json_query("results[*].yumstate")}}'
+
+- when: firewalld_is_installed.results|selectattr("yumstate", "match", "installed")|list|length != 0
+  block:
+  - name: Enable firewalld
+    systemd:
+      name: firewalld
+      state: started
+      enabled: yes
+    become: yes
+    tags: [firewalld, service]
+
+  - name: Check dockerc firewall zone exists
+    command: firewall-cmd --info-zone=dockerc
+    changed_when: false
+    ignore_errors: yes
+    register: dockerc_zone_exists
+    become: yes
+    tags: [firewalldd, config]
+
+  - debug: var=dockerc_zone_exists
+    tags: [firewalld, config]
+
+  - name: Add dockerc zone
+    command: firewall-cmd --permanent --new-zone dockerc
+    failed_when: false
+    changed_when: false
+    ignore_errors: no
+    when: dockerc_zone_exists.rc != 0
+    become: yes
+    tags: [firewalld, config]
+
+  - name: Open ports in dockerc zone
+    firewalld:
+      zone: dockerc
+      permanent: yes
+      source: '{{ docker_bridge_ip_addr }}'
+      state: enabled
+      port: '{{ item }}'
+    with_items: '{{ firewalld_dockerc_zone_ports }}'
+    become: yes
+    tags: [firewalld, config]
+  always:
+    - debug: msg="trigger firewalld reload"
+      notify: firewalld reload
+      changed_when: true

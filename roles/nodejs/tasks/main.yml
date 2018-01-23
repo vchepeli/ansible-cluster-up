@@ -1,0 +1,36 @@
+---
+# PREREQUISITE BLOCK
+- name: Check if NodeJs@{{ nodejs_version }} is installed
+  stat:
+    path: '{{ nodejs_install_dir }}/bin/node'
+  ignore_errors: yes
+  changed_when: false
+  register: nodejs_bin_installed
+  tags: [nodejs, prerequisite]
+
+- when: not nodejs_bin_installed.stat.exists
+  block:
+  - name: Install NVM@{{ nvm_version }}
+    shell: 'curl -fsSL {{ nvm_install_sh_download_url }} | sh'
+    args:
+      creates: '{{ nvm_shell }}'
+    ignore_errors: no
+    register: nvm_installed
+    tags: [nvm, install]
+
+  - name: NVM install NodeJs@{{ nodejs_version }}
+    shell: source {{ nvm_shell }} && nvm install v{{ nodejs_version }}
+    when: not nvm_installed|skipped
+    tags: [nodejs, install]
+
+  - name: NVM set NodeJs@{{ nodejs_version }} as default
+    shell: source {{ nvm_shell }} && nvm alias default v{{ nodejs_version }}
+    when: not nvm_installed|skipped
+    tags: [nodejs, install]
+
+# POSTCHECK BLOCK
+- name: Check installed version
+  shell: /usr/bin/test "$(node -v 2> /dev/null)" = v{{ nodejs_version }}
+  register: nodejs_wanted_version_installed
+  failed_when: nodejs_wanted_version_installed.rc > 0
+  tags: [nodejs, check]

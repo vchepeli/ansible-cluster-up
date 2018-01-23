@@ -1,0 +1,65 @@
+---
+- name: Get the current users name
+  shell: id -u -n
+  changed_when: false
+  ignore_errors: no
+  register: user_name
+
+#TODO add check if right version of docker is installed
+- block:
+  - name: Install latest docker version
+    shell: curl -fsSL https://get.docker.com/ | sh
+    changed_when: false
+    ignore_errors: no
+    register: docker_installation
+    tags: [docker, install]
+
+  - name: Enable system service
+    systemd:
+      name: docker
+      state: started
+      enabled: yes
+    become: yes
+    tags: [docker, service]
+
+  - name: Add {{ user_name.stdout }} to docker group
+    user:
+      name: '{{ user_name.stdout }}'
+      group: docker
+      append: yes
+    become: yes
+    tags: [docker, install]
+
+  - name: Add insecure registry to sysconfig
+    lineinfile:
+      path: /etc/sysconfig/docker
+      create: yes
+      state: present
+      line: '{{ docker_sysconfig_options }}'
+    become: yes
+    tags: [docker, config]
+
+  - name: Adding insecure registry to daemon
+    template:
+      src: daemon.json.j2
+      dest: /etc/docker/daemon.json
+      mode: 0644
+    become: yes
+    tags: [docker, install]
+  always:
+    - debug: msg="trigger docker restart"
+      notify: docker restart
+      changed_when: true
+      tags: [docker, install]
+
+# POSTCHECK docker block
+- name: Check bridge network
+  command: docker network inspect -f '{% raw %}{{range .IPAM.Config }}{{ .Subnet }}{{end}}{% endraw %}' bridge
+  changed_when: false
+  ignore_errors: no
+  register: docker_bridge
+  become: yes
+  tags: [docker, check]
+
+- debug: var=docker_bridge
+  tags: [docker, check]

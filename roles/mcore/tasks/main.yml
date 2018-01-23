@@ -1,0 +1,24 @@
+- name: Get the current users name
+  shell: id -u -n
+  changed_when: false
+  ignore_errors: no
+  register: user_name
+  tags: [mcore, clone]
+
+- name: Clone mobile-core repo in /home/{{ user_name.stdout }}
+  git:
+    repo: https://github.com/aerogear/mobile-core
+    dest: /home/{{ user_name.stdout }}/mobile-core
+    refspec: '+refs/pull/*:refs/heads/*'
+  register: mobile_core_cloned
+  tags: [mcore, clone]
+
+- name: Ansible galaxy install
+  command: ansible-galaxy install -r installer/requirements.yml
+  args:
+    chdir: '/home/{{ user_name.stdout }}/mobile-core'
+  environment:
+    PATH: "{{ ansible_env.PATH}}:/home/{{ user_name.stdout }}/.local/bin"
+  changed_when: mobile_core_cloned.changed
+  failed_when: mobile_core_cloned.failed
+  tags: [mcore, install]

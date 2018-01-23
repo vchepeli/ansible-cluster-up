@@ -1,0 +1,13 @@
+---
+system_required_packages:
+  - curl
+  - epel-release
+  - git
+  - libselinux-python
+  - mc
+  - ntp
+  - net-tools
+  - unzip
+  - vim
+  - wget
+  - zip

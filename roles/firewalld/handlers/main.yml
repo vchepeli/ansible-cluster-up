@@ -1,0 +1,7 @@
+---
+- name: firewalld reload
+  command: firewall-cmd --reload
+  changed_when: false
+  ignore_errors: '{{ ansible_check_mode }}'
+  become: yes
+  tags: [firewalld, handler]

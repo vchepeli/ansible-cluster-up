@@ -1,0 +1,8 @@
+---
+- name: Install latest ansible with pip
+  pip:
+    name: ansible
+    state: latest
+    extra_args: --user --upgrade
+  when: pip_wanted_version_installed.rc == 0
+  tags: [ansible, install]

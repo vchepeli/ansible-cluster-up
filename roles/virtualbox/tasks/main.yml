@@ -1,0 +1,62 @@
+---
+- name: Get the current users name
+  shell: id -u -n
+  changed_when: false
+  ignore_errors: no
+  register: user_name
+  tags: [virtualbox, user]
+
+## TODO if kernel updated reboot needed
+##Check that that you are running latest installed kernel version
+##Output of following commands version numbers should match:
+##rpm -qa kernel |sort -V |tail -n 1
+##uname -r
+##Note: If you got kernel update or run older kernel than newest installed then reboot:
+##reboot
+
+- name: Add repository
+  yum_repository:
+    name: '{{ virtualbox_yum_repo_name }}'
+    description: '{{ virtualbox_yum_repo_desc }}'
+    baseurl: '{{ virtualbox_yum_repo_url }}'
+    gpgkey: '{{ virtualbox_yum_repo_gpgkey }}'
+    gpgcheck: yes
+    enabled: yes
+  become: yes
+  tags: [virtualbox, repository]
+
+- name: Install required packages
+  yum:
+    name: '{{ item }}'
+    state: latest
+  with_items: '{{ virtualbox_required_packages }}'
+
+  become: yes
+  tags: [virtualbox, dependencies]
+
+- name: Install VirtualBox@{{ virtualbox_version }}
+  yum:
+    name: '{{ virtualbox_pkg_name }}'
+    state: latest
+  become: yes
+  tags: [virtualbox, install]
+
+- name: Rebuild kernel modules
+  shell: /usr/lib/virtualbox/vboxdrv.sh setup
+  ignore_errors: no
+  register: virtualbox_kernel_modules_rebuilded
+  failed_when: virtualbox_kernel_modules_rebuilded.rc > 0
+  become: yes
+  tags: [virtualbox, install]
+
+- name: Add {{ user_name.stdout }} to vboxusers group
+  user:
+    name: '{{ user_name.stdout }}'
+    group: vboxusers
+    append: yes
+  become: yes
+  tags: [virtualbox, install]
+
+## TODO setup environment variable for KERN_DIR
+## Current running kernel on CentOS and Red Hat (RHEL) ##
+## KERN_DIR=/usr/src/kernels/`uname -r`-`uname -m`

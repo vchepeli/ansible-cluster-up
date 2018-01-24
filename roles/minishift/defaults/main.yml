@@ -1,4 +1,4 @@
-minishift_version: 1.11.0
-minishift_sha: 4459917
+minishift_version: 1.12.0
+minishift_sha: daa0943
 minishift_platform: 'linux-amd64'
 minishift_install_opt_dir: '/opt/openshift/minishift'

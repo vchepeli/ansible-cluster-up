@@ -1,8 +1,8 @@
 minishift_download_mirror: 'https://github.com/minishift/minishift/releases/download'
 
 minishift_bundle_name: 'minishift-{{ minishift_version }}-{{ minishift_platform }}'
-minishift_bundle_archive: '{{ minishift_bundle_name }}{{ minishift_download_format|default(".tgz") }}'
-minishift_bundle_download_url: '{{ minishift_download_mirror }}/v{{ minishift_version }}/{{ minishift_bundle_archive }}'
+minishift_bundle_archive: '{{ minishift_bundle_name }}{{ minishift_bundle_format|default(".tgz") }}'
+minishift_bundle_url: '{{ minishift_download_mirror }}/v{{ minishift_version }}/{{ minishift_bundle_archive }}'
 
 minishift_install_dir: '{{ minishift_install_opt_dir }}/v{{ minishift_version }}'
 minishift_default_dir: '{{ minishift_install_opt_dir }}/default'

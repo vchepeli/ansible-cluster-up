@@ -1,4 +1,15 @@
 ---
+- name: resolve platform specific vars
+  include_vars: '{{item}}'
+  with_first_found:
+    - files:
+        - '{{ansible_distribution}}-{{ansible_distribution_release}}.yml'
+        - '{{ansible_distribution}}.yml'
+        - '{{ansible_os_family}}.yml'
+      skip: true
+      paths:
+        - '{{role_path}}/vars'
+
 - name: Get the current users name
   shell: id -u -n
   changed_when: false
@@ -16,7 +27,7 @@
 
 - when: not oc_bin_installed.stat.exists
   block:
-  - name: Create temporary directory
+  - name: Create TMP directory
     tempfile:
       state: directory
       prefix: oc
@@ -26,7 +37,7 @@
 
   - name: Download OC bundle TAR.GZ
     get_url:
-      url: '{{ oc_bundle_downloaded_url }}'
+      url: '{{ oc_bundle_url }}'
       dest: '{{ oc_dir_tmp_created.path }}/'
     when: not oc_dir_tmp_created|skipped
     register: oc_bundle_downloaded
@@ -48,7 +59,7 @@
       owner: '{{ user_name.stdout }}'
       creates: '{{ oc_install_dir }}/oc'
       copy: no
-      extra_opts: --strip-components=1
+      extra_opts: '{{ oc_bundle_archive_extra_opts }}'
     when: not oc_bundle_downloaded|skipped
     register: oc_bundle_extracted
     become: yes
@@ -84,7 +95,7 @@
       tags: [oc, install]
 
 - name: Checking installed version of OC client
-  shell: /usr/bin/test "$(oc version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ oc_version }}+{{ oc_sha }}
+  shell: test "$(oc version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ oc_version }}+{{ oc_sha }}
   ignore_errors: yes
   register: oc_wanted_version_installed
   failed_when: oc_wanted_version_installed.rc > 0

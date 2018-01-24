@@ -1,0 +1,3 @@
+---
+minishift_platform: 'darwin-amd64'
+minishift_bundle_format: '.tgz'

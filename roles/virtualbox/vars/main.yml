@@ -1,0 +1,18 @@
+---
+virtualbox_yum_repo_url: 'http://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch'
+virtualbox_yum_repo_name: 'Oracle Linux / RHEL / CentOS-$releasever / $basearch - VirtualBox'
+virtualbox_yum_repo_desc: 'VirtualBox YUM repo'
+virtualbox_yum_repo_gpgkey: 'https://www.virtualbox.org/download/oracle_vbox.asc'
+
+virtualbox_pkg_name: 'VirtualBox-{{ virtualbox_version }}'
+virtualbox_required_packages:
+  - binutils
+  - gcc
+  - make
+  - patch
+  - libgomp
+  - glibc-headers
+  - glibc-devel
+  - kernel-headers
+  - kernel-devel
+  - dkms

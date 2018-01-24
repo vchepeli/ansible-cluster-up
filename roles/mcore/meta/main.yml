@@ -1,6 +1,6 @@
 ---
 dependencies:
-  - firewalld
-  - ansible
+  - { role: firewalld, when: ansible_os_family == "RedHat" }
+  - { role: ansible, when: ansible_os_family == "RedHat" }
   - nodejs
   - oc

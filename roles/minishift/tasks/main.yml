@@ -1,3 +1,15 @@
+- name: Resolve platform specific vars
+  include_vars: '{{item}}'
+  with_first_found:
+    - files:
+        - '{{ansible_distribution}}-{{ansible_distribution_release}}.yml'
+        - '{{ansible_distribution}}.yml'
+        - '{{ansible_os_family}}.yml'
+      skip: true
+      paths:
+        - '{{role_path}}/vars'
+  tags: [minishift, prerequisite]
+
 - name: Get the current users name
   shell: id -u -n
   changed_when: false
@@ -25,7 +37,7 @@
 
   - name: Download Minishift bundle TAR.GZ
     get_url:
-      url: '{{ minishift_bundle_download_url }}'
+      url: '{{ minishift_bundle_url }}'
       dest: '{{ minishift_dir_tmp_created.path }}/'
     when: not minishift_dir_tmp_created|skipped
     register: minishift_bundle_downloaded
@@ -44,9 +56,9 @@
     unarchive:
       src: '{{ minishift_dir_tmp_created.path }}/{{ minishift_bundle_archive }}'
       dest: '{{ minishift_install_dir }}'
-      owner: '{{ user_name.stdout }}'
+#      owner: '{{ user_name.stdout }}'
       copy: no
-      extra_opts: --strip-components=1
+      extra_opts: '--strip-components=1'
     when: not minishift_bundle_downloaded|skipped
     register: minishift_bundle_extracted
     become: yes
@@ -82,7 +94,7 @@
       tags: [minishift, install]
 
 - name: Checking installed version of Minishift client
-  shell: /usr/bin/test "$(minishift version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ minishift_version }}+{{ minishift_sha }}
+  shell: test "$(minishift version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ minishift_version }}+{{ minishift_sha }}
   ignore_errors: yes
   register: minishift_wanted_version_installed
   failed_when: minishift_wanted_version_installed.rc > 0

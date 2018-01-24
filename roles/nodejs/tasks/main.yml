@@ -15,7 +15,7 @@
       creates: '{{ nvm_shell }}'
     ignore_errors: no
     register: nvm_installed
-    tags: [nvm, install]
+    tags: [nodejs, install]
 
   - name: NVM install NodeJs@{{ nodejs_version }}
     shell: source {{ nvm_shell }} && nvm install v{{ nodejs_version }}
@@ -28,7 +28,7 @@
     tags: [nodejs, install]
 
 - name: Check installed version
-  shell: /usr/bin/test "$(node -v 2> /dev/null)" = v{{ nodejs_version }}
+  shell: test "$(node -v 2> /dev/null)" = v{{ nodejs_version }}
   register: nodejs_wanted_version_installed
   failed_when: nodejs_wanted_version_installed.rc > 0
   tags: [nodejs, postcheck]

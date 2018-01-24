@@ -1,5 +1,6 @@
 ---
-- block:
+- when: ansible_os_family == "RedHat"
+  block:
   - name: Upgrade all packages
     yum:
       name: '*'
@@ -32,7 +33,7 @@
     tags: [system, nameserver]
 
 #TODO setup system limits
-#/etc/security/limits.conf
+# echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
 #TODO add MOTD file
 #Managed by ansinle

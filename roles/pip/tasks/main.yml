@@ -4,6 +4,7 @@
     name: python-pip
     state: latest
   become: yes
+  when: ansible_os_family == "RedHat"
   tags: [pip, install]
 
 - name: Install latest version
@@ -15,8 +16,7 @@
   tags: [pip, install]
 
 - name: Check installed version
-  shell: /usr/bin/test "$(pip --version | awk '{print $2}' 2> /dev/null)" = {{ pip_version }}
-  ignore_errors: yes
+  shell: test "$(pip --version | awk '{print $2}' 2> /dev/null)" = {{ pip_version }}
   changed_when: false
   register: pip_wanted_version_installed
   failed_when: pip_wanted_version_installed.rc > 0

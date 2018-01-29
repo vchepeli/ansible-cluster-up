@@ -16,7 +16,7 @@
     with_file: '{{ ansible_env.HOME }}/.ssh/ec2.centos.pub'
     tags: [ec2, keypair]
 
-  - name: Configure security groups for mcp-core
+  - name: Configure SSH and HTTPS security groups
     ec2_group:
       name: '{{ item.name }}'
       description: '{{ item.description}}'
@@ -29,17 +29,17 @@
     with_items:
       - {name: mcore-ssh,   description: Allow SSH access,   proto: tcp, port: 22}
       - {name: mcore-https, description: Allow HTTPS access, proto: tcp, port: 8443}
-    tags: [ec2, security]
+    tags: [ec2, sec-group]
 
-  - name: Outbound security group
+  - name: Configure Outbound security group
     ec2_group:
-      name: outbound
-      description: allow outbound connections to the internet
+      name: mcore-outbound
+      description: Allow outbound access
       region: "{{ ec2_region }}"
       rules_egress:
         - proto: all
           cidr_ip: 0.0.0.0/0
-    tags: [ec2, security]
+    tags: [ec2, sec-group]
 
   - name: Get the Centos EBS SSD AMI
     ec2_ami_find:
@@ -59,7 +59,7 @@
       image: '{{ centos_ami_find.results[0].ami_id }}'
       instance_type: '{{ ec2_instance_type }}'
       key_name: '{{ ec2_key_name }}'
-      group: [ssh, https, outbound]
+      group: [mcore-ssh, mcore-https, mcore-outbound]
       instance_tags: {Name: mcore-1, type: mobile-core, env: testing}
       exact_count: '{{ ec2_instance_count }}'
       count_tag: {type: mobile-core}

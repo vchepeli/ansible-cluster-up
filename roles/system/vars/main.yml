@@ -1,12 +1,18 @@
 ---
 system_required_packages:
+  - binutils
+  - bzip2
   - curl
   - epel-release
+  - gcc
   - git
+  - java-1.8.0-openjdk-headless
   - libselinux-python
+  - make
   - mc
   - ntp
   - net-tools
+  - patch
   - unzip
   - vim
   - wget

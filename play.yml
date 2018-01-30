@@ -12,39 +12,23 @@
     - nodejs
     - docker
     - oc
-#1
-# TODO we need to ignore this somehow when running ansible playbook
-#The authenticity of host 'ec2-18-195-20-141.eu-central-1.compute.amazonaws.com (18.195.20.141)' can't be established.
-#ECDSA key fingerprint is SHA256:fe1GwMejo9fqhUuJxPmNfUgPcOOuVINnGLwAqFxnZ9k.
-#Are you sure you want to continue connecting (yes/no)? yes
 
-#2
+#1
 ## Add Docker env vars
 #  export DOCKERHUB_USERNAME=<my_dockerhub_username>
 #  export DOCKERHUB_PASSWORD=<my_dockerhub_password>
+
+#2 Fix mobile-core ansible scripts
 ## roles/oc-cluster-up
 #  - remove lo:0 aliase
 #  - change oc_version
 #  - change public_hostname_ip
 ##  ui
-#  - remove all phantomjs deps
+#  - install bzip2 yum package
 
-#3
-# TODO check if we need setup cluster up with AWS EC2 instance
+#3 ansible@2.4.2.0;docker@18.01.0-ce;pip@9.0.1;oc@3.7.1
+# Setup cluster up with AWS EC2 instance
 #$ metadata_endpoint="http://169.254.169.254/latest/meta-data"
 #$ public_hostname="$( curl "${metadata_endpoint}/public-hostname" )"
 #$ public_ip="$( curl "${metadata_endpoint}/public-ipv4" )"
 #$ oc cluster up --public-hostname="${public_hostname}" --routing-suffix="${public_ip}.nip.io"
-
-#4
-#  - name: Ansible playbook run
-#    command: >
-#      ansible-playbook installer/playbook.yml
-#      -e "dockerhub_username=$DOCKERHUB_USERNAME"
-#      -e "dockerhub_password=$DOCKERHUB_PASSWORD"
-#    args:
-#      chdir: "~/mobile-core"
-#    environment:
-#      PATH: "{{ ansible_env.PATH}}:/home/{{ ansible_user }}/.local/bin"
-#    changed_when: false
-#    ignore_errors: no

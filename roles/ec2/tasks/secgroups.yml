@@ -1,0 +1,29 @@
+---
+- name: Configure SSH and HTTPS security groups
+  local_action:
+    module: ec2_group
+    region: '{{ ec2_region }}'
+    name: '{{ item.name }}'
+    description: '{{ item.description}}'
+    rules:
+      - proto: '{{ item.proto }}'
+        from_port: '{{ item.port }}'
+        to_port: '{{ item.port }}'
+        cidr_ip: 0.0.0.0/0
+    validate_certs: yes
+  with_items:
+    - {name: mcore-ssh,   description: Allow SSH access,   proto: tcp, port: 22}
+    - {name: mcore-https, description: Allow HTTPS access, proto: tcp, port: 8443}
+  tags: [ec2, secgroups]
+
+- name: Configure Outbound security group
+  local_action:
+    module: ec2_group
+    region: "{{ ec2_region }}"
+    name: mcore-outbound
+    description: Allow outbound access
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    validate_certs: yes
+  tags: [ec2, secgroups]

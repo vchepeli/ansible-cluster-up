@@ -3,15 +3,17 @@
   vars:
     ec2_enabled: yes
   roles:
-    - ec2
+  - ec2
 
 - hosts: mcore
   roles:
-    - firewalld
-    - ansible
-    - nodejs
-    - docker
-    - oc
+  - firewalld
+  - ansible
+  - nodejs
+  - docker
+  - oc
+  tasks:
+  - include_role: name=ec2 tasks_from=bakeami.yml
 
 #1
 ## Add Docker env vars

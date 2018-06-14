@@ -71,7 +71,7 @@
       dest: '{{ docker_machine_kvm_default_dir }}'
       state: link
       force: yes
-    when: not docker_machine_kvm_bundle_downloaded|skipped
+    when: not docker_machine_kvm_bundle_downloaded is skipped
     register: docker_machine_kvm_default_dir_linked
     tags: [kvm, install]
 
@@ -81,6 +81,6 @@
       dest: '/usr/local/bin/docker-machine-driver-kvm'
       state: link
       force: yes
-    when: not docker_machine_kvm_default_dir_linked|skipped
+    when: not docker_machine_kvm_default_dir_linked is skipped
     become: yes
     tags: [kvm, install]

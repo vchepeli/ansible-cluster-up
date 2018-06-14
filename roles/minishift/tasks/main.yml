@@ -39,7 +39,7 @@
     get_url:
       url: '{{ minishift_bundle_url }}'
       dest: '{{ minishift_dir_tmp_created.path }}/'
-    when: not minishift_dir_tmp_created|skipped
+    when: not minishift_dir_tmp_created is skipped
     register: minishift_bundle_downloaded
     tags: [minishift, install]
 
@@ -48,7 +48,7 @@
       path: '{{ minishift_install_dir }}'
       state: directory
       owner: '{{ user_name.stdout }}'
-    when: not minishift_bundle_downloaded|skipped
+    when: not minishift_bundle_downloaded is skipped
     become: yes
     tags: [minishift, install]
 
@@ -59,7 +59,7 @@
 #      owner: '{{ user_name.stdout }}'
       copy: no
       extra_opts: '--strip-components=1'
-    when: not minishift_bundle_downloaded|skipped
+    when: not minishift_bundle_downloaded is skipped
     register: minishift_bundle_extracted
     become: yes
     tags: [minishift, install]
@@ -70,7 +70,7 @@
       dest: '{{ minishift_default_dir }}'
       state: link
       force: yes
-    when: not minishift_bundle_extracted|skipped
+    when: not minishift_bundle_extracted is skipped
     register: minishift_default_dir_linked
     tags: [minishift, install]
 
@@ -80,7 +80,7 @@
       dest: '/usr/local/bin/minishift'
       state: link
       force: yes
-    when: not minishift_default_dir_linked|skipped
+    when: not minishift_default_dir_linked is skipped
     become: yes
     tags: [minishift, install]
 

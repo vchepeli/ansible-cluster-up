@@ -1,0 +1,56 @@
+---
+- name: Start the instances
+  local_action:
+    module: ec2
+    region: '{{ ec2_region }}'
+    image: '{{ centos_ami_find.results[0].ami_id }}'
+    instance_type: '{{ ec2_instance_type }}'
+    key_name: '{{ ec2_key_name }}'
+    group: [mcore-ssh, mcore-https, mcore-outbound]
+    instance_tags: {Name: mcore1, type: mcore, env: testing}
+    exact_count: '{{ ec2_instance_count }}'
+    count_tag: {type: mcore}
+    validate_certs: yes
+    wait: yes
+    wait_timeout: 900
+  register: ec2
+  tags: [ec2, start-vms]
+
+- debug: var=ec2
+
+- name: Add instances to group
+  local_action:
+    module: add_host
+    name: 'mcore{{ item.ami_launch_index|int + 1 }}'
+    groups: 'mcore'
+    instance_id: '{{ item.id }}'
+    ansible_host: '{{ item.public_dns_name }}'
+    ansible_connection: 'ssh'
+    ansible_port: 22
+    public_ip: '{{ item.public_ip }}'
+    private_ip: '{{ item.private_ip }}'
+  when: item.public_dns_name is defined
+  with_items: '{{ ec2.tagged_instances }}'
+  tags: [ec2, group-vms]
+
+- debug: var=groups.mcore
+
+- name: Wait for SSH server to be running
+  local_action:
+    module: wait_for
+    host: '{{ hostvars[item].ansible_host }}'
+    port: 22
+    search_regex: OpenSSH
+  with_items: '{{ groups["mcore"] }}'
+  tags: [ec2, wait-vms]
+
+- name: Add instances to inventory file
+  lineinfile:
+    dest: '{{ playbook_dir }}/hosts'
+    regexp: '^{{ item }}'
+    line: '{{ item }} instance_id={{ hostvars[item].instance_id }} ansible_host={{ hostvars[item].ansible_host }}'
+    insertafter: '\[mcore\]'
+    state: present
+  changed_when: False
+  with_items: '{{ groups["mcore"] }}'
+  tags: [os7, deploy]

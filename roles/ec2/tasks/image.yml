@@ -1,0 +1,14 @@
+---
+- name: Get the Centos EBS SSD AMI
+  local_action:
+    module: ec2_ami_find
+    region: '{{ ec2_region }}'
+    architecture: x86_64
+    name: 'CentOS Linux 7*EBS*'
+    sort: creationDate
+    sort_order: descending
+    sort_end: 1
+    no_result_action: fail
+    validate_certs: yes
+  register: centos_ami_find
+  tags: [ec2, find-vmi]

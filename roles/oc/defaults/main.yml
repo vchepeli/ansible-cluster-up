@@ -1,6 +1,6 @@
 ---
-oc_version: '3.7.1'
-oc_sha: 'ab0f056'
+oc_version: '3.9.0'
+oc_sha: '191fece'
 oc_platform: 'linux-64bit'
 oc_install_opt_dir: '/opt/openshift/oc'
 oc_bundle_archive_extra_opts: '--strip-components=1'

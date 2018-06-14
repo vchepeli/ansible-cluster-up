@@ -1,0 +1,10 @@
+---
+- name: Create keypair
+  local_action:
+    module: ec2_key
+    region: '{{ ec2_region }}'
+    name: '{{ ec2_key_name }}'
+    key_material: '{{ item }}'
+    validate_certs: yes
+  with_file: '{{ ansible_env.HOME }}/.ssh/ec2.centos.pub'
+  tags: [ec2, keypair]

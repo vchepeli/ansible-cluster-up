@@ -1,0 +1,58 @@
+---
+- name: Get previous mcore-centos7 EBS SSD AMI
+  local_action:
+    module: ec2_ami_find
+    region: '{{ ec2_region }}'
+    architecture: x86_64
+    name: 'mcore-centos7'
+    sort: creationDate
+    sort_order: descending
+    sort_end: 1
+    no_result_action: success
+    validate_certs: yes
+  register: mcore_centos7_ami_find
+  tags: [ec2, find-mcore-centos7]
+
+- name: Deregister AMI (delete associated snapshots too)
+  local_action:
+    module: ec2_ami
+    region: '{{ ec2_region }}'
+    image_id: '{{ mcore_centos7_ami_find.results[0].ami_id }}'
+    delete_snapshot: True
+    state: absent
+    wait: yes
+    wait_timeout: 900
+    validate_certs: yes
+  when: mcore_centos7_ami_find.results|length != 0
+  register: mcore_centos7_ami_unregistered
+  tags: [ec2, find-mcore-centos7]
+
+- debug: var=mcore_centos7_ami_unregistered
+
+- name: Register AMI from mcore-1 instance
+  local_action:
+    module: ec2_ami
+    region: '{{ ec2_region }}'
+    architecture: x86_64
+    instance_id: '{{ hostvars[item].instance_id }}'
+    name: mcore-centos7
+    description: 'pip@{{ pip_version_installed.stdout }};ansible@{{ ansible_version_installed.stdout }};docker@{{docker_version_installed.stdout }};oc@{{ oc_version_installed.stdout }};node@{{ nodejs_version_installed.stdout }}'
+    state: present
+#    root_device_name: /dev/xvda
+    virtualization_type: hvm
+    wait: yes
+    wait_timeout: 900
+    validate_certs: yes
+    tags:
+      Name: mcore-centos7
+      Service: Jenkins
+      Repository: mobile-core
+#    device_mapping:
+#      - device_name: /dev/xvda
+#        size: 20
+#        delete_on_termination: true
+#        volume_type: gp2
+  register: mcore_centos7_ami_registered
+  with_items: '{{ groups["mcore"] }}'
+
+- debug: var=mcore_centos7_ami_registered

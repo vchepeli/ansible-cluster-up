@@ -39,7 +39,7 @@
     get_url:
       url: '{{ oc_bundle_url }}'
       dest: '{{ oc_dir_tmp_created.path }}/'
-    when: not oc_dir_tmp_created|skipped
+    when: not oc_dir_tmp_created is skipped
     register: oc_bundle_downloaded
     tags: [oc, install]
 
@@ -48,7 +48,7 @@
       path: '{{ oc_install_dir }}'
       state: directory
       owner: '{{ user_name.stdout }}'
-    when: not oc_bundle_downloaded|skipped
+    when: not oc_bundle_downloaded is skipped
     become: yes
     tags: [oc, install]
 
@@ -60,7 +60,7 @@
       creates: '{{ oc_install_dir }}/oc'
       copy: no
       extra_opts: '{{ oc_bundle_archive_extra_opts }}'
-    when: not oc_bundle_downloaded|skipped
+    when: not oc_bundle_downloaded is skipped
     register: oc_bundle_extracted
     become: yes
     tags: [oc, install]
@@ -71,7 +71,7 @@
       dest: '{{ oc_default_dir }}'
       state: link
       force: yes
-    when: not oc_bundle_extracted|skipped
+    when: not oc_bundle_extracted is skipped
     register: oc_default_dir_linked
     tags: [oc, install]
 
@@ -81,7 +81,7 @@
       dest: '/usr/local/bin/oc'
       state: link
       force: yes
-    when: not oc_default_dir_linked|skipped
+    when: not oc_default_dir_linked is skipped
     become: yes
     tags: [oc, install]
 
@@ -95,8 +95,10 @@
       tags: [oc, install]
 
 - name: Checking installed version of OC client
-  shell: test "$(oc version | head -n1 | awk '{print $2}' 2> /dev/null)" = v{{ oc_version }}+{{ oc_sha }}
+  shell: oc version | head -n1 | awk '{print $2}' 2> /dev/null
   ignore_errors: yes
-  register: oc_wanted_version_installed
-  failed_when: oc_wanted_version_installed.rc > 0
-  tags: [oc, postcheck]
+  register: oc_version_installed
+  tags: [oc, version]
+
+- debug: var=oc_version_installed
+  tags: [oc, version]

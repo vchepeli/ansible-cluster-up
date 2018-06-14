@@ -4,17 +4,15 @@
   changed_when: false
   ignore_errors: no
   register: user_name
-  tags: [docker, prerequisite]
+  tags: [docker, whoami]
 
-#TODO add check if right version of docker is installed
 #TODO alternative installation of docker https://www.vultr.com/docs/installing-docker-ce-on-centos-7
 - block:
-    # This should install edge docker version, current 18.01
-  - name: Install latest docker version
-    shell: curl -fsSL https://get.docker.com/ | sh
-    changed_when: false
-    ignore_errors: no
-    register: docker_installation
+  - name: install the docker@17.09.1 rpm from a remote repo
+    yum:
+      name: '{{ docker_v17091_rpm_url }}'
+      state: present
+    become: yes
     tags: [docker, install]
 
   - name: Enable system service
@@ -33,15 +31,16 @@
     become: yes
     tags: [docker, install]
 
-  - name: Add insecure registry to sysconfig
-    lineinfile:
-      path: /etc/sysconfig/docker
-      create: yes
-      state: present
-      line: '{{ docker_sysconfig_options }}'
-    become: yes
-    tags: [docker, config]
-
+# TODO remove this configuration, deprecated
+#  - name: Add insecure registry to sysconfig
+#    lineinfile:
+#      path: /etc/sysconfig/docker
+#      create: yes
+#      state: present
+#      line: '{{ docker_sysconfig_options }}'
+#    become: yes
+#    tags: [docker, config]
+#
   - name: Adding insecure registry to daemon
     template:
       src: daemon.json.j2
@@ -61,7 +60,18 @@
   ignore_errors: no
   register: docker_bridge
   become: yes
-  tags: [docker, postcheck]
+  tags: [docker, bridge]
 
 - debug: var=docker_bridge
-  tags: [docker, postcheck]
+  tags: [docker, bridge]
+
+- name: Check docker version
+  shell: docker -v | awk '{print $3}' | rev | cut -c 2- | rev 2> /dev/null
+  changed_when: false
+  ignore_errors: no
+  register: docker_version_installed
+  become: yes
+  tags: [docker, version]
+
+- debug: var=docker_version_installed
+  tags: [docker, version]

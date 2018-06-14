@@ -3,4 +3,4 @@ ec2_enabled: no
 ec2_region: eu-central-1
 ec2_instance_type: t2.large
 ec2_instance_count: 1
-ec2_key_name: ec2-mcp-core
+ec2_key_name: mcore-sshkey

@@ -6,3 +6,14 @@
     extra_args: --upgrade
   become: yes
   tags: [ansible, install]
+
+- name: Check ansible version
+  shell: ansible --version | head -n1 | awk '{print $2}' 2> /dev/null
+  changed_when: false
+  ignore_errors: no
+  register: ansible_version_installed
+  become: yes
+  tags: [ansible, version]
+
+- debug: var=ansible_version_installed
+  tags: [ansible, version]

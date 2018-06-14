@@ -13,22 +13,26 @@
     shell: 'curl -fsSL {{ nvm_install_sh_download_url }} | sh'
     args:
       creates: '{{ nvm_shell }}'
+      warn: no
     ignore_errors: no
     register: nvm_installed
     tags: [nodejs, install]
 
   - name: NVM install NodeJs@{{ nodejs_version }}
     shell: source {{ nvm_shell }} && nvm install v{{ nodejs_version }}
-    when: not nvm_installed|skipped
+    when: not nvm_installed is skipped
     tags: [nodejs, install]
 
   - name: NVM set NodeJs@{{ nodejs_version }} as default
     shell: source {{ nvm_shell }} && nvm alias default v{{ nodejs_version }}
-    when: not nvm_installed|skipped
+    when: not nvm_installed is skipped
     tags: [nodejs, install]
-
+  # block
 - name: Check installed version
-  shell: test "$(node -v 2> /dev/null)" = v{{ nodejs_version }}
-  register: nodejs_wanted_version_installed
-  failed_when: nodejs_wanted_version_installed.rc > 0
-  tags: [nodejs, postcheck]
+  shell: node -v 2> /dev/null
+  register: nodejs_version_installed
+  changed_when: false
+  tags: [nodejs, version]
+
+- debug: var=nodejs_version_installed
+  tags: [nodejs, version]

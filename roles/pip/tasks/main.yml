@@ -16,8 +16,10 @@
   tags: [pip, install]
 
 - name: Check installed version
-  shell: test "$(pip --version | awk '{print $2}' 2> /dev/null)" = {{ pip_version }}
+  shell: pip --version | awk '{print $2}' 2> /dev/null
   changed_when: false
-  register: pip_wanted_version_installed
-  failed_when: pip_wanted_version_installed.rc > 0
-  tags: [pip, postcheck]
+  register: pip_version_installed
+  tags: [pip, version]
+
+- debug: var=pip_version_installed
+  tags: [pip, version]
